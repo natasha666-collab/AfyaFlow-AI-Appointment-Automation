@@ -1,0 +1,374 @@
+{
+  "name": "AfyaFlow AI Appointment Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1pMHxjeYn5xmZ15d1Xqdn7AUQ2QIGjVJVikM-EC9Eal0",
+          "mode": "list",
+          "cachedResultName": "AfyaFlow Patient Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pMHxjeYn5xmZ15d1Xqdn7AUQ2QIGjVJVikM-EC9Eal0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 29064014,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pMHxjeYn5xmZ15d1Xqdn7AUQ2QIGjVJVikM-EC9Eal0/edit#gid=29064014"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        0
+      ],
+      "id": "07f5aba0-4f3a-49d7-81e5-da4a0e81ba1e",
+      "name": "New Patient Appointment Request",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "hyyGSW4HaoUYYBTA",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-flash-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-flash-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are AfyaFlow AI, an intelligent hospital administrative assistant.\n\nYour task is to help hospital reception staff classify patient appointment requests.\n\nYou must NEVER diagnose diseases.\n\nReturn ONLY valid JSON.\n\nThe JSON format must be exactly:\n\n{\n  \"department\":\"\",\n  \"priority\":\"\",\n  \"clinic\":\"\",\n  \"reception_summary\":\"\"\n}\n\nChoose the department from:\n\n- General Medicine\n- Cardiology\n- Pediatrics\n- Orthopedics\n- Neurology\n- Dermatology\n- ENT\n- Ophthalmology\n- Gynecology\n- Emergency\n\nPriority must only be:\n\nLow\nMedium\nHigh\n\nClinic should be the appropriate outpatient clinic.\n\nReception summary should be under 40 words and mention that this is administrative triage only.\n\nPatient symptoms:\n{{ $json.Symptoms }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -288,
+        0
+      ],
+      "id": "0d21cbf0-ce4b-43cc-a4ab-7cb4902a4e1d",
+      "name": "Message a model",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "WYWJJbZFtQK8xFND",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process all input items, not just the first\nreturn $input.all().map(item => {\n  const aiResponse = item.json.content.parts[0].text;\n  const parsed = JSON.parse(aiResponse);\n  return { json: parsed };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e11d5612-3d9c-45ce-90f1-e422d8ad328e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1pMHxjeYn5xmZ15d1Xqdn7AUQ2QIGjVJVikM-EC9Eal0",
+          "mode": "list",
+          "cachedResultName": "AfyaFlow Patient Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pMHxjeYn5xmZ15d1Xqdn7AUQ2QIGjVJVikM-EC9Eal0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 29064014,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pMHxjeYn5xmZ15d1Xqdn7AUQ2QIGjVJVikM-EC9Eal0/edit#gid=29064014"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": 0,
+            "AI Department": "={{ $json.department }}",
+            "Priority": "={{ $json.priority }}",
+            "Clinic": "={{ $json.clinic }}",
+            "Reception Summary": "={{ $json.reception_summary }}",
+            "AI Status": "AI Processed",
+            "Email Address": "={{ $('New Patient Appointment Request').item.json['Email Address'] }}"
+          },
+          "matchingColumns": [
+            "Email Address"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Age",
+              "displayName": "Age",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Gender",
+              "displayName": "Gender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Symptoms",
+              "displayName": "Symptoms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preferred Appointment Date",
+              "displayName": "Preferred Appointment Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AI Department",
+              "displayName": "AI Department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Clinic",
+              "displayName": "Clinic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reception Summary",
+              "displayName": "Reception Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AI Status",
+              "displayName": "AI Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        176,
+        0
+      ],
+      "id": "ecbcf1c1-9be8-4767-99d6-f02c925f7d39",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "W0nXt7DwDPTQ0COM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json['Email Address'] }}",
+        "subject": "🏥 AfyaFlow | Appointment Request Received",
+        "emailType": "text",
+        "message": "=Dear {{ $('New Patient Appointment Request').item.json['Full Name'] }} ,\nThank you for submitting your appointment request through AfyaFlow.\nYour request has been received successfully.\n---------------------------------------\nAdministrative Triage Summary\nDepartment:{{ $('Code in JavaScript').item.json.department }}\nPriority:{{ $('Code in JavaScript').item.json.priority }}\nRecommended Clinic:{{ $('Code in JavaScript').item.json.clinic }}\nSummary:{{ $('Code in JavaScript').item.json.reception_summary }}\n---------------------------------------\n\nOur hospital staff will review your request and contact you shortly with your appointment details.\nThis recommendation is for administrative routing only and is NOT a medical diagnosis.\nThank you for choosing AfyaFlow.\n\nKind regards,\nAfyaFlow\nSmart Hospital Operations Powered by AI",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        0
+      ],
+      "id": "fe01e8c3-0cc0-4580-971f-e9bb29a98e07",
+      "name": "Send a message",
+      "webhookId": "364d17dc-d1fe-40d9-8786-1fe20bf638d6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Bk3Zg9dhsWQ9Sm63",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Patient Appointment Request": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "755bc3a8-8594-4d78-83ad-b9544af1cb37",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7ff3e804ded7b2633ac71861b51b9d96c07dc3c7ea2bc72108b090dbc44d388e"
+  },
+  "nodeGroups": [],
+  "id": "BwpYqANHlBM0JVqy",
+  "tags": []
+}
